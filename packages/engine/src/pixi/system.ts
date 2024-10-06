@@ -5,13 +5,17 @@ import { PixiComponent, PixiSpriteComponent } from './component'
 import { SystemQuery } from '../core/system/system-query'
 import { Entity } from '../core'
 
+export interface PixiSystemArgs extends Partial<ApplicationOptions> {
+  maxFps?: number
+}
 export class PixiSystem extends System {
-  args: Partial<ApplicationOptions>
+  args: PixiSystemArgs
   application!: Application
   query = new SystemQuery([PixiComponent], [PixiSpriteComponent])
 
-  private currentTime = performance.now()
-  constructor(args: Partial<ApplicationOptions>) {
+  private lastRenderTime = performance.now()
+
+  constructor(args: PixiSystemArgs) {
     super()
     this.args = args
 
@@ -30,20 +34,30 @@ export class PixiSystem extends System {
 
   render() {
     const newTime = performance.now()
-    const delta = (newTime - this.currentTime) / 1000
-    this.currentTime = newTime
+    const delta = newTime - this.lastRenderTime / 1000
 
-    for (const entity of this.query.get(this.engine.scenes.current)) {
-      const component = entity.getComponent(PixiComponent)
+    const minFrameTime = this.args.maxFps ? 1000 / this.args.maxFps : 0
 
-      component.emit('render', {
-        delta,
-        fixedDelta: 1 / this.engine.systems.updateFps,
-      })
-      component.render(delta, 1 / this.engine.systems.updateFps)
+    if (delta >= minFrameTime) {
+      this.lastRenderTime = newTime
+
+      const fixedDelta = 1 / this.engine.clock.fps
+
+      for (const entity of this.query.get(this.engine.scenes.current)) {
+        const component = entity.getComponent(PixiComponent)
+
+        component.emit('render', {
+          delta: delta,
+          fixedDelta: fixedDelta,
+        })
+
+        component.render(delta, fixedDelta)
+      }
+
+      this.application.render()
     }
 
-    this.application.render()
+    // Request the next frame
     requestAnimationFrame(this.render.bind(this))
   }
 

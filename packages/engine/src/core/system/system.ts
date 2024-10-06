@@ -1,4 +1,5 @@
 import { Engine } from '../engine'
+import { TickEvent } from '../engine/clock'
 import { Entity } from '../entity'
 import { SystemQuery } from './system-query'
 
@@ -9,5 +10,5 @@ export class System {
 
   async init() {}
 
-  update(delta: number, entities: Set<Entity>) {}
+  update(event: TickEvent, entities: Set<Entity>) {}
 }

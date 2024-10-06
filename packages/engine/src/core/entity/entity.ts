@@ -2,6 +2,7 @@ import { Component } from '../component'
 import { ConstructorOf } from '../../helpers'
 import { Scene } from '../scene'
 import { Engine } from '../engine'
+import { TickEvent } from '../engine/clock'
 
 export class Entity {
   scene?: Scene
@@ -41,9 +42,9 @@ export class Entity {
     this.components.delete(component.constructor as ConstructorOf<Component>)
   }
 
-  onUpdate(delta: number) {}
+  onUpdate(args: UpdateEvent) {}
 
-  onPostUpdate(delta: number) {}
+  onPostUpdate(args: UpdateEvent) {}
 
   remove() {
     if (this.scene) {
@@ -54,3 +55,5 @@ export class Entity {
   onAdd(scene: Scene) {}
   onRemove(scene: Scene) {}
 }
+
+export type UpdateEvent = TickEvent

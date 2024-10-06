@@ -1,6 +1,6 @@
 /* @refresh reload */
 import './index.css'
-import { Engine, Entity, Scene } from 'game-engine'
+import { Engine, Entity, Scene, UpdateEvent } from 'game-engine'
 import { PixiSpriteComponent, PixiSystem } from 'game-engine/pixi'
 import { resources } from './resources'
 
@@ -8,15 +8,15 @@ class Player extends Entity {
   graphic = this.$(new PixiSpriteComponent(resources.get('sprite')))
 
   log = 0
-  onUpdate(delta: number): void {
+  onUpdate({ delta }: UpdateEvent): void {
     this.log += delta
 
-    if (this.log > 100) {
+    if (this.log > 1) {
       console.log(delta)
       this.log = 0
     }
 
-    this.graphic.view.x += 1 * delta
+    this.graphic.view.x += 100 * delta
   }
 }
 
@@ -27,7 +27,6 @@ class Level1 extends Scene {
 }
 
 const engine = new Engine({
-  updateFps: 60,
   resources,
   systems: [
     new PixiSystem({

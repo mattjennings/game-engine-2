@@ -3,16 +3,12 @@ import { EventEmitter } from '../events'
 import { Resources } from '../resources'
 import { Scene } from '../scene'
 import { System } from '../system'
+import { Clock, TickEvent } from './clock'
 
 export interface EngineArgs {
   systems: System[]
 
-  /**
-   * The number of times per second the engine should update.
-   *
-   * Note: This is not the same as the FPS of the renderer.
-   */
-  updateFps?: number
+  clock?: Clock
 
   initialScene?: string
   scenes: Record<string, Scene>
@@ -23,6 +19,7 @@ export interface EngineArgs {
 export class Engine {
   systems = new Systems(this)
   scenes = new Scenes(this)
+  clock = new Clock(this)
   resources: Resources<any>
 
   started = false
@@ -32,10 +29,14 @@ export class Engine {
   constructor(args: EngineArgs) {
     this.resources = args.resources || new Resources()
 
-    // systems
-    if (args.updateFps) {
-      this.systems.updateFps = args.updateFps
+    // clock
+    if (args.clock) {
+      this.clock = args.clock
     }
+
+    this.clock.on('tick', this.systems.update.bind(this.systems))
+
+    // systems
     for (const system of args.systems) {
       this.systems.add(system)
     }
@@ -65,6 +66,7 @@ export class Engine {
     await this.resources.load()
     this.scenes.goto(this.initialSceneKey)
     await this.systems.init()
+    this.clock.start()
   }
 
   pause() {
@@ -78,62 +80,35 @@ export class Engine {
 
 class Systems extends EventEmitter {
   engine: Engine
-  updateFps = 60
-  timescale: number = 1
   paused = false
 
   private systems: System[] = []
-  private currentTime = performance.now()
-  private accumulator = 0
 
   constructor(engine: Engine) {
     super()
     this.engine = engine
   }
 
-  update() {
-    // https://gafferongames.com/post/fix_your_timestep/
-    const newTime = performance.now()
-    let frameTime = newTime - this.currentTime
-
-    if (frameTime > 250) {
-      frameTime = 250
-    }
-
-    this.currentTime = newTime
-    this.accumulator += frameTime
-
-    const slice = 1 / this.updateFps
-    const dt = slice * this.timescale
-
-    while (this.accumulator >= slice) {
-      if (!this.paused) {
-        for (const entity of this.engine.scenes.current.entities) {
-          entity.onUpdate(dt)
-        }
-
-        for (const system of this.systems) {
-          system.update(dt, system.query.get(this.engine.scenes.current))
-        }
-
-        for (const entity of this.engine.scenes.current.entities) {
-          entity.onPostUpdate(dt)
-        }
+  update(args: TickEvent) {
+    if (!this.paused) {
+      for (const entity of this.engine.scenes.current.entities) {
+        entity.onUpdate(args)
       }
 
-      this.accumulator -= slice
-      this.currentTime += slice
-    }
+      for (const system of this.systems) {
+        system.update(args, system.query.get(this.engine.scenes.current))
+      }
 
-    setTimeout(() => this.update(), 1000 / this.updateFps)
+      for (const entity of this.engine.scenes.current.entities) {
+        entity.onPostUpdate(args)
+      }
+    }
   }
 
   async init() {
     for (const system of this.systems) {
       await system.init()
     }
-
-    this.update()
   }
 
   invalidateQueries() {
