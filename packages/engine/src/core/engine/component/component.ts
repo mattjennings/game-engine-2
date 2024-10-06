@@ -1,8 +1,8 @@
 import { Entity, UpdateEvent } from '../entity'
-import { EventEmitter } from '../events/event-emitter'
+import { EventEmitter } from '../events'
 
 export class Component extends EventEmitter {
-  entity: Entity | null = null
+  entity!: Entity
 
   onAdd(entity: Entity) {}
   onRemove(entity: Entity) {}

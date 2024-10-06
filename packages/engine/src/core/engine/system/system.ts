@@ -1,5 +1,5 @@
 import { Engine } from '../engine'
-import { TickEvent } from '../engine/clock'
+import { TickEvent } from '../clock'
 import { Entity } from '../entity'
 import { EventEmitter } from '../events'
 import { SystemQuery } from './system-query'

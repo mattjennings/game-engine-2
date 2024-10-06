@@ -1,8 +1,8 @@
 import { ConstructorOf } from '../../helpers'
-import { EventEmitter } from '../events'
-import { Resources } from '../resources'
-import { Scene } from '../scene'
-import { System } from '../system'
+import { EventEmitter } from './events'
+import { Resources } from './resources'
+import { Scene } from './scene'
+import { System } from './system'
 import { Clock, TickEvent } from './clock'
 
 export interface EngineArgs {

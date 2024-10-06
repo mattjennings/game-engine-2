@@ -1,9 +1,8 @@
 import { Application, ApplicationOptions } from 'pixi.js'
 
-import { System } from '../core/system'
+import { System, SystemQuery } from '../core/engine'
 import { PixiComponent } from './component'
-import { SystemQuery } from '../core/system/system-query'
-import { Entity } from '../core'
+import { Entity, TransformComponent } from '../core'
 
 export interface PixiSystemArgs extends Partial<ApplicationOptions> {
   maxFps?: number
@@ -12,7 +11,7 @@ export interface PixiSystemArgs extends Partial<ApplicationOptions> {
 export class PixiSystem extends System {
   args: PixiSystemArgs
   application!: Application
-  query = new SystemQuery([PixiComponent])
+  query = new SystemQuery([PixiComponent, TransformComponent])
 
   private lastRenderTime = performance.now()
 
@@ -35,15 +34,16 @@ export class PixiSystem extends System {
     const newTime = performance.now()
     const delta = (newTime - this.lastRenderTime) / 1000
 
-    const minFrameTime = this.args.maxFps ? 1000 / this.args.maxFps : 0
+    const minFrameTime = this.args.maxFps ? 1 / this.args.maxFps : 0
 
     if (delta >= minFrameTime) {
       this.lastRenderTime = newTime
 
       for (const entity of this.query.get(this.engine.scenes.current)) {
         const component = entity.components.get(PixiComponent)!
-        const interpolationFactor =
-          this.engine.clock.accumulatedFrameTime / (1 / this.engine.clock.fps)
+        const interpolationFactor = Math.min(
+          this.engine.clock.accumulatedFrameTime / (1 / this.engine.clock.fps),
+        )
 
         component.render({
           delta,

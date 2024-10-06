@@ -1,6 +1,6 @@
 import { Engine } from '../engine'
-import { Entity } from '../entity/entity'
-import { EventEmitter } from '../events/event-emitter'
+import { Entity } from '../entity'
+import { EventEmitter } from '../events'
 
 export class Scene extends EventEmitter<{
   entityadded: Entity

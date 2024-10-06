@@ -1,8 +1,8 @@
 import { Component } from '../component'
-import { ConstructorOf } from '../../helpers'
+import { ConstructorOf } from '../../../helpers'
 import { Scene } from '../scene'
 import { Engine } from '../engine'
-import { TickEvent } from '../engine/clock'
+import { TickEvent } from '../clock'
 import { EventEmitter } from '../events'
 
 export class Entity extends EventEmitter<{
@@ -65,6 +65,7 @@ export class ComponentRegistry {
 
   add<T extends Component>(component: T): T {
     const root = this.getClassHierarchyRoot(component.constructor)
+
     this.components.set(root, component)
     component.entity = this.entity
     component.onAdd(this.entity)
@@ -98,7 +99,7 @@ export class ComponentRegistry {
     let current = cls
     let parent = Object.getPrototypeOf(current.prototype)?.constructor
 
-    while (parent && parent !== Object) {
+    while (parent && parent !== Object && parent !== Component) {
       current = parent
       parent = Object.getPrototypeOf(current.prototype)?.constructor
     }

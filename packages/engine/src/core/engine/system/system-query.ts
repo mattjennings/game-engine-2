@@ -1,19 +1,19 @@
-import { ConstructorOf } from '../../helpers'
+import { ConstructorOf } from '../../../helpers'
 import { Component } from '../component'
 import { Entity } from '../entity'
 import { EventEmitter } from '../events'
 import { Scene } from '../scene'
 
-export class SystemQuery<T extends Component> extends EventEmitter<{
+export class SystemQuery extends EventEmitter<{
   entityadded: Entity
   entityremoved: Entity
 }> {
   entities: Set<Entity> = new Set()
 
   private dirty: boolean = true
-  private components: ConstructorOf<T>[] | null = null
+  private components: ConstructorOf<Component>[] | null = null
 
-  constructor(components?: ConstructorOf<T>[]) {
+  constructor(components?: ConstructorOf<Component>[]) {
     super()
     if (components) {
       this.components = components
