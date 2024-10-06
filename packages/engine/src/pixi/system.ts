@@ -1,8 +1,8 @@
 import { Application, ApplicationOptions } from 'pixi.js'
 
 import { System, SystemQuery } from '../core/engine'
-import { PixiComponent } from './component'
-import { Entity, TransformComponent } from '../core'
+import { $PixiContainer } from './component'
+import { Entity, $Transform } from '../core'
 
 export interface PixiSystemArgs extends Partial<ApplicationOptions> {
   maxFps?: number
@@ -11,7 +11,7 @@ export interface PixiSystemArgs extends Partial<ApplicationOptions> {
 export class PixiSystem extends System {
   args: PixiSystemArgs
   application!: Application
-  query = new SystemQuery([PixiComponent, TransformComponent])
+  query = new SystemQuery([$PixiContainer, $Transform])
 
   private lastRenderTime = performance.now()
 
@@ -40,7 +40,7 @@ export class PixiSystem extends System {
       this.lastRenderTime = newTime
 
       for (const entity of this.query.get(this.engine.scenes.current)) {
-        const component = entity.components.get(PixiComponent)!
+        const component = entity.components.get($PixiContainer)!
         const interpolationFactor = Math.min(
           this.engine.clock.accumulatedFrameTime / (1 / this.engine.clock.fps),
         )
@@ -65,14 +65,14 @@ export class PixiSystem extends System {
   }
 
   onEntityAdded(entity: Entity) {
-    const component = entity.components.get(PixiComponent)
+    const component = entity.components.get($PixiContainer)
     if (component) {
       this.application.stage.addChild(component.container)
     }
   }
 
   onEntityRemoved(entity: Entity) {
-    const component = entity.components.get(PixiComponent)
+    const component = entity.components.get($PixiContainer)
     if (component) {
       this.application.stage.removeChild(component.container)
     }

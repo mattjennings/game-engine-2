@@ -1,13 +1,16 @@
 import { Component, Entity, UpdateEvent } from '../engine'
 import { Vector } from '../math'
 
-export class TransformComponent extends Component {
+export class $Transform extends Component {
   position = Vector.zero
   prevPosition = Vector.zero
   rotation = 0
 
-  constructor(args: { position?: Vector; rotation?: number } = {}) {
-    super()
+  constructor(
+    entity: Entity,
+    args: { position?: Vector; rotation?: number } = {},
+  ) {
+    super(entity)
     if (args.position) {
       this.position = args.position
     }

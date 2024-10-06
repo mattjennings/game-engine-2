@@ -1,17 +1,17 @@
 import { Container, Sprite, Texture } from 'pixi.js'
-import { Component, TransformComponent, UpdateEvent, Vector } from '../core'
+import { Component, Entity, $Transform, UpdateEvent, Vector } from '../core'
 import { RenderEvent } from './system'
 
-export class PixiComponent<T extends Container> extends Component {
+export class $PixiContainer<T extends Container> extends Component {
   container: T
 
-  constructor(container: T) {
-    super()
+  constructor(entity: Entity, container: T) {
+    super(entity)
     this.container = container
   }
 
   render({ interpolationFactor }: RenderEvent): void {
-    const transform = this.entity.$(TransformComponent)!
+    const transform = this.entity.$($Transform)!
 
     const lerped = Vector.lerp(
       transform.prevPosition,
@@ -24,8 +24,8 @@ export class PixiComponent<T extends Container> extends Component {
   }
 }
 
-export class PixiSpriteComponent extends PixiComponent<Sprite> {
-  constructor(texture: Texture) {
-    super(new Sprite(texture))
+export class $PixiSprite extends $PixiContainer<Sprite> {
+  constructor(entity: Entity, texture: Texture) {
+    super(entity, new Sprite(texture))
   }
 }

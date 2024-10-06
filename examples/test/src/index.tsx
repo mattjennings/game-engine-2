@@ -1,17 +1,11 @@
 import './index.css'
-import {
-  Engine,
-  Entity,
-  Scene,
-  TransformComponent,
-  UpdateEvent,
-} from 'game-engine'
-import { PixiSpriteComponent, PixiSystem } from 'game-engine/pixi'
+import { Engine, Entity, Scene, $Transform, UpdateEvent } from 'game-engine'
+import { $PixiSprite, PixiSystem } from 'game-engine/pixi'
 import { resources } from './resources'
 
 class Player extends Entity {
-  transform = this.$(new TransformComponent())
-  graphic = this.$(new PixiSpriteComponent(resources.get('sprite')))
+  transform = new $Transform(this)
+  graphic = new $PixiSprite(this, resources.get('sprite'))
 
   constructor() {
     super()
