@@ -1,18 +1,17 @@
 /* @refresh reload */
 import './index.css'
 import { Engine, Entity, Scene } from 'game-engine'
-import { PixiComponent, PixiSystem } from 'game-engine/pixi'
+import { PixiSpriteComponent, PixiSystem } from 'game-engine/pixi'
 import { resources } from './resources'
 
 class Player extends Entity {
-  sprite = this.$(new PixiComponent(resources.get('sprite')))
+  graphic = this.$(new PixiSpriteComponent(resources.get('sprite')))
 
   onUpdate(delta: number): void {}
 }
 
 class Level1 extends Scene {
-  constructor() {
-    super()
+  onStart() {
     this.addEntity(new Player())
   }
 }

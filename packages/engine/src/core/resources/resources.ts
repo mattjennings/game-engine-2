@@ -41,6 +41,7 @@ export class Resources<T extends string> {
           await resource.load()
           if (this.queued.has(name)) {
             this.loaded.set(name, resource)
+            this.queued.delete(name)
           }
         } catch (e) {
           rej(e)

@@ -1,4 +1,5 @@
 import { ConstructorOf } from '../../helpers'
+import { EventEmitter } from '../events'
 import { Resources } from '../resources'
 import { Scene } from '../scene'
 import { System } from '../system'
@@ -52,13 +53,17 @@ export class Engine {
         ).join(', ')}`,
       )
     }
+
+    this.scenes.on('change', () => {
+      this.systems.invalidateQueries()
+    })
   }
 
   async init() {
     this.started = true
+    await this.resources.load()
     this.scenes.goto(this.initialSceneKey)
     await this.systems.init()
-    await this.resources.load()
   }
 
   pause() {
@@ -70,7 +75,7 @@ export class Engine {
   }
 }
 
-class SystemsManager {
+class SystemsManager extends EventEmitter {
   engine: Engine
   updatesPerSecond: number = 60
   timescale: number = 1
@@ -79,6 +84,7 @@ class SystemsManager {
   private looper?: number = undefined
 
   constructor(engine: Engine) {
+    super()
     this.engine = engine
   }
 
@@ -90,7 +96,7 @@ class SystemsManager {
     }
 
     for (const system of this.systems) {
-      system.update(delta)
+      system.update(delta, system.query.get(this.engine.scenes.current))
     }
 
     for (const entity of this.engine.scenes.current.entities) {
@@ -104,6 +110,12 @@ class SystemsManager {
     }
 
     this.resume()
+  }
+
+  invalidateQueries() {
+    for (const system of this.systems) {
+      system.query.invalidate()
+    }
   }
 
   pause() {
@@ -143,17 +155,21 @@ class SystemsManager {
   }
 }
 
-class SceneManager {
+class SceneManager extends EventEmitter {
   routes: Map<string, Scene> = new Map()
   current!: Scene
   engine: Engine
 
   constructor(engine: Engine) {
+    super()
     this.engine = engine
   }
 
   add(name: string, scene: Scene) {
     this.routes.set(name, scene)
+
+    // @ts-expect-error
+    scene._engine = this.engine
   }
 
   goto(name: string) {
@@ -162,5 +178,7 @@ class SceneManager {
     }
 
     this.current = this.routes.get(name)!
+    this.emit('change', this.current)
+    this.current.onStart()
   }
 }
