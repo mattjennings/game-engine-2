@@ -10,6 +10,7 @@ export class PixiSystem extends System {
   application!: Application
   query = new SystemQuery([PixiComponent], [PixiSpriteComponent])
 
+  private currentTime = performance.now()
   constructor(args: Partial<ApplicationOptions>) {
     super()
     this.args = args
@@ -21,12 +22,33 @@ export class PixiSystem extends System {
   async init() {
     this.application = new Application()
     await this.application.init(this.args)
+    this.application.stop()
     document.body.appendChild(this.application.canvas)
+
+    requestAnimationFrame(this.render.bind(this))
+  }
+
+  render() {
+    const newTime = performance.now()
+    const delta = (newTime - this.currentTime) / 1000
+    this.currentTime = newTime
+
+    for (const entity of this.query.get(this.engine.scenes.current)) {
+      const component = entity.getComponent(PixiComponent)
+
+      component.emit('render', {
+        delta,
+        fixedDelta: 1 / this.engine.systems.updateFps,
+      })
+      component.render(delta, 1 / this.engine.systems.updateFps)
+    }
+
+    this.application.render()
+    requestAnimationFrame(this.render.bind(this))
   }
 
   onEntityAdded(entity: Entity) {
     const component = entity.getComponent(PixiComponent)
-
     if (component) {
       this.application.stage.addChild(component.view)
     }

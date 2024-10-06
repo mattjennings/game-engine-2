@@ -8,12 +8,11 @@ export interface EngineArgs {
   systems: System[]
 
   /**
-   * The number of times the engine should update each system per second.
+   * The number of times per second the engine should update.
    *
-   * Note: this is NOT frame rate. The Renderer system should accept a frame rate
-   * option.
+   * Note: This is not the same as the FPS of the renderer.
    */
-  updatesPerSecond?: number
+  updateFps?: number
 
   initialScene?: string
   scenes: Record<string, Scene>
@@ -22,8 +21,8 @@ export interface EngineArgs {
 }
 
 export class Engine {
-  systems = new SystemsManager(this)
-  scenes = new SceneManager(this)
+  systems = new Systems(this)
+  scenes = new Scenes(this)
   resources: Resources<any>
 
   started = false
@@ -34,7 +33,9 @@ export class Engine {
     this.resources = args.resources || new Resources()
 
     // systems
-    this.systems.updatesPerSecond = args.updatesPerSecond || 60
+    if (args.updateFps) {
+      this.systems.updateFps = args.updateFps
+    }
     for (const system of args.systems) {
       this.systems.add(system)
     }
@@ -67,21 +68,23 @@ export class Engine {
   }
 
   pause() {
-    this.systems.pause()
+    this.systems.paused = true
   }
 
   resume() {
-    this.systems.resume()
+    this.systems.paused = false
   }
 }
 
-class SystemsManager extends EventEmitter {
+class Systems extends EventEmitter {
   engine: Engine
-  updatesPerSecond: number = 60
+  updateFps = 60
   timescale: number = 1
+  paused = false
 
   private systems: System[] = []
-  private looper?: number = undefined
+  private currentTime = performance.now()
+  private accumulator = 0
 
   constructor(engine: Engine) {
     super()
@@ -89,19 +92,40 @@ class SystemsManager extends EventEmitter {
   }
 
   update() {
-    const delta = 1000 / this.updatesPerSecond
+    // https://gafferongames.com/post/fix_your_timestep/
+    const newTime = performance.now()
+    let frameTime = newTime - this.currentTime
 
-    for (const entity of this.engine.scenes.current.entities) {
-      entity.onUpdate(delta)
+    if (frameTime > 250) {
+      frameTime = 250
     }
 
-    for (const system of this.systems) {
-      system.update(delta, system.query.get(this.engine.scenes.current))
+    this.currentTime = newTime
+    this.accumulator += frameTime
+
+    const slice = 1 / this.updateFps
+    const dt = slice * this.timescale
+
+    while (this.accumulator >= slice) {
+      if (!this.paused) {
+        for (const entity of this.engine.scenes.current.entities) {
+          entity.onUpdate(dt)
+        }
+
+        for (const system of this.systems) {
+          system.update(dt, system.query.get(this.engine.scenes.current))
+        }
+
+        for (const entity of this.engine.scenes.current.entities) {
+          entity.onPostUpdate(dt)
+        }
+      }
+
+      this.accumulator -= slice
+      this.currentTime += slice
     }
 
-    for (const entity of this.engine.scenes.current.entities) {
-      entity.onPostUpdate(delta)
-    }
+    setTimeout(() => this.update(), 1000 / this.updateFps)
   }
 
   async init() {
@@ -109,7 +133,7 @@ class SystemsManager extends EventEmitter {
       await system.init()
     }
 
-    this.resume()
+    this.update()
   }
 
   invalidateQueries() {
@@ -118,27 +142,9 @@ class SystemsManager extends EventEmitter {
     }
   }
 
-  pause() {
-    if (!this.looper) {
-      return
-    }
-
-    clearInterval(this.looper)
-    this.looper = undefined
-  }
-
-  resume() {
-    if (this.looper) {
-      return
-    }
-
-    this.looper = setInterval(() => {
-      this.update()
-    }, 1000 / this.updatesPerSecond)
-  }
-
   add(system: System) {
     this.systems.push(system)
+    system.engine = this.engine
 
     this.systems.sort(
       // @ts-ignore
@@ -155,7 +161,7 @@ class SystemsManager extends EventEmitter {
   }
 }
 
-class SceneManager extends EventEmitter {
+class Scenes extends EventEmitter {
   routes: Map<string, Scene> = new Map()
   current!: Scene
   engine: Engine

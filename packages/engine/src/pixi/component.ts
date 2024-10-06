@@ -8,9 +8,11 @@ export class PixiComponent<T extends View> extends Component {
     super()
     this.view = view
   }
+
+  render(delta: number, fixedDelta: number) {}
 }
 
-export class PixiSpriteComponent extends PixiComponent<View> {
+export class PixiSpriteComponent extends PixiComponent<Sprite> {
   constructor(texture: Texture) {
     super(new Sprite(texture))
   }

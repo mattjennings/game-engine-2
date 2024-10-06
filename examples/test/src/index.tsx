@@ -7,7 +7,17 @@ import { resources } from './resources'
 class Player extends Entity {
   graphic = this.$(new PixiSpriteComponent(resources.get('sprite')))
 
-  onUpdate(delta: number): void {}
+  log = 0
+  onUpdate(delta: number): void {
+    this.log += delta
+
+    if (this.log > 100) {
+      console.log(delta)
+      this.log = 0
+    }
+
+    this.graphic.view.x += 1 * delta
+  }
 }
 
 class Level1 extends Scene {
@@ -17,6 +27,7 @@ class Level1 extends Scene {
 }
 
 const engine = new Engine({
+  updateFps: 60,
   resources,
   systems: [
     new PixiSystem({
@@ -27,7 +38,6 @@ const engine = new Engine({
   scenes: {
     level1: new Level1(),
   },
-  updatesPerSecond: 60,
 })
 
 engine.init()
