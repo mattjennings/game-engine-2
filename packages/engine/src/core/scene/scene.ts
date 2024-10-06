@@ -20,20 +20,28 @@ export class Scene extends EventEmitter<{
   }
 
   addEntity(entity: Entity) {
-    this.entities.add(entity)
     entity.scene = this
     entity.engine = this.engine
     entity.onAdd(this)
+    entity.emit('added', this)
 
-    this.engine.systems.invalidateQueries()
     this.emit('entityadded', entity)
+    this.entities.add(entity)
+    this.engine.systems.invalidateQueries()
   }
 
-  removeEntity(entity: Entity) {
+  removeEntity(entity: Entity, destroy = false) {
+    delete entity.scene
+    delete entity.engine
+
+    if (destroy) {
+      entity.destroy()
+    }
     entity.onRemove(this)
+
+    this.emit('entityremoved', entity)
     this.entities.delete(entity)
     this.engine.systems.invalidateQueries()
-    this.emit('entityremoved', entity)
   }
 
   onStart() {}

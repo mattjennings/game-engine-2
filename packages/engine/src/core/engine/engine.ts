@@ -93,6 +93,7 @@ class Systems extends EventEmitter {
     if (!this.paused) {
       for (const entity of this.engine.scenes.current.entities) {
         entity.onUpdate(args)
+        entity.emit('update', args)
       }
 
       for (const system of this.systems) {
@@ -101,6 +102,7 @@ class Systems extends EventEmitter {
 
       for (const entity of this.engine.scenes.current.entities) {
         entity.onPostUpdate(args)
+        entity.emit('postupdate', args)
       }
     }
   }

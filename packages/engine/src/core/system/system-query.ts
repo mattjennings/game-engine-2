@@ -4,22 +4,19 @@ import { Entity } from '../entity'
 import { EventEmitter } from '../events'
 import { Scene } from '../scene'
 
-export class SystemQuery extends EventEmitter<{
+export class SystemQuery<T extends Component> extends EventEmitter<{
   entityadded: Entity
   entityremoved: Entity
 }> {
   entities: Set<Entity> = new Set()
 
   private dirty: boolean = true
-  private components: ConstructorOf<Component>[][] | null = null
+  private components: ConstructorOf<T>[] | null = null
 
-  constructor(
-    components?: ConstructorOf<Component>[],
-    ...rest: ConstructorOf<Component>[][]
-  ) {
+  constructor(components?: ConstructorOf<T>[]) {
     super()
     if (components) {
-      this.components = [[...components], ...rest]
+      this.components = components
     }
   }
 
@@ -37,14 +34,20 @@ export class SystemQuery extends EventEmitter<{
     this.entities.clear()
 
     for (const entity of scene.entities) {
-      for (const group of this.components) {
-        if (group.every((component) => !!entity.getComponent(component))) {
-          this.entities.add(entity)
-
-          if (!previousEntities.has(entity)) {
-            this.emit('entityadded', entity)
-          }
+      let satisfiesQuery = true
+      for (const component of this.components) {
+        // ensure entity has all the components in the group
+        if (!entity.components.get(component)) {
+          satisfiesQuery = false
           break
+        }
+      }
+
+      if (satisfiesQuery) {
+        this.entities.add(entity)
+
+        if (!previousEntities.has(entity)) {
+          this.emit('entityadded', entity)
         }
       }
     }

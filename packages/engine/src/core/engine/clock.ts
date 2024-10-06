@@ -3,18 +3,21 @@ import { Engine } from './engine'
 
 export interface TickEvent {
   delta: number
+  elapsed: number
 }
+
 export class Clock extends EventEmitter<{
   tick: TickEvent
 }> {
   engine: Engine
 
+  elapsed = 0
   fps = 60
   maxFrameDelta = 0.25
   timescale = 1
+  accumulatedFrameTime = 0
 
   private currentTime = performance.now()
-  private accumulator = 0
 
   private timer: number | null = null
 
@@ -41,13 +44,14 @@ export class Clock extends EventEmitter<{
     }
 
     this.currentTime = newTime
-    this.accumulator += frameTime
+    this.elapsed += frameTime
+    this.accumulatedFrameTime += frameTime
 
     const fixedDeltaTime = 1 / this.fps
 
-    while (this.accumulator >= fixedDeltaTime) {
-      this.emit('tick', { delta: fixedDeltaTime })
-      this.accumulator -= fixedDeltaTime
+    while (this.accumulatedFrameTime >= fixedDeltaTime) {
+      this.emit('tick', { delta: fixedDeltaTime, elapsed: this.elapsed })
+      this.accumulatedFrameTime -= fixedDeltaTime
     }
 
     this.timer = setTimeout(() => this.tick(), 0)

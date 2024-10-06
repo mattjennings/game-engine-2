@@ -31,4 +31,8 @@ export class EventEmitter<
       listener(payload)
     })
   }
+
+  removeAllListeners() {
+    this.listeners = {}
+  }
 }

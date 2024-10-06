@@ -1,29 +1,28 @@
 import { Application, ApplicationOptions } from 'pixi.js'
 
 import { System } from '../core/system'
-import { PixiComponent, PixiSpriteComponent } from './component'
+import { PixiComponent } from './component'
 import { SystemQuery } from '../core/system/system-query'
 import { Entity } from '../core'
 
 export interface PixiSystemArgs extends Partial<ApplicationOptions> {
   maxFps?: number
 }
+
 export class PixiSystem extends System {
   args: PixiSystemArgs
   application!: Application
-  query = new SystemQuery([PixiComponent], [PixiSpriteComponent])
+  query = new SystemQuery([PixiComponent])
 
   private lastRenderTime = performance.now()
 
   constructor(args: PixiSystemArgs) {
     super()
     this.args = args
-
-    this.query.on('entityadded', this.onEntityAdded.bind(this))
-    this.query.on('entityremoved', this.onEntityRemoved.bind(this))
   }
 
   async init() {
+    await super.init()
     this.application = new Application()
     await this.application.init(this.args)
     this.application.stop()
@@ -34,24 +33,28 @@ export class PixiSystem extends System {
 
   render() {
     const newTime = performance.now()
-    const delta = newTime - this.lastRenderTime / 1000
+    const delta = (newTime - this.lastRenderTime) / 1000
 
     const minFrameTime = this.args.maxFps ? 1000 / this.args.maxFps : 0
 
     if (delta >= minFrameTime) {
       this.lastRenderTime = newTime
 
-      const fixedDelta = 1 / this.engine.clock.fps
-
       for (const entity of this.query.get(this.engine.scenes.current)) {
-        const component = entity.getComponent(PixiComponent)
+        const component = entity.components.get(PixiComponent)!
+        const interpolationFactor =
+          this.engine.clock.accumulatedFrameTime / (1 / this.engine.clock.fps)
 
+        component.render({
+          delta,
+          elapsed: this.engine.clock.elapsed,
+          interpolationFactor,
+        })
         component.emit('render', {
           delta: delta,
-          fixedDelta: fixedDelta,
+          elapsed: this.engine.clock.elapsed,
+          interpolationFactor,
         })
-
-        component.render(delta, fixedDelta)
       }
 
       this.application.render()
@@ -62,16 +65,22 @@ export class PixiSystem extends System {
   }
 
   onEntityAdded(entity: Entity) {
-    const component = entity.getComponent(PixiComponent)
+    const component = entity.components.get(PixiComponent)
     if (component) {
-      this.application.stage.addChild(component.view)
+      this.application.stage.addChild(component.container)
     }
   }
 
   onEntityRemoved(entity: Entity) {
-    const component = entity.getComponent(PixiComponent)
+    const component = entity.components.get(PixiComponent)
     if (component) {
-      this.application.stage.removeChild(component.view)
+      this.application.stage.removeChild(component.container)
     }
   }
+}
+
+export interface RenderEvent {
+  delta: number
+  elapsed: number
+  interpolationFactor: number
 }
