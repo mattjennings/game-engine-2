@@ -26,7 +26,6 @@ const engine = new Engine({
   resources,
   systems: [
     new PixiSystem({
-      // maxFps: 60,
       background: '#1099bb',
       resizeTo: window,
     }),

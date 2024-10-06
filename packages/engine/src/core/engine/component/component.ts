@@ -13,6 +13,7 @@ export class Component extends EventEmitter {
   onAdd(entity: Entity) {}
   onRemove(entity: Entity) {}
 
+  onPreUpdate(ev: UpdateEvent) {}
   onUpdate(ev: UpdateEvent) {}
   onPostUpdate(ev: UpdateEvent) {}
 }

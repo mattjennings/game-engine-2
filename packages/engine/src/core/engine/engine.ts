@@ -92,6 +92,11 @@ class Systems extends EventEmitter {
   update(args: TickEvent) {
     if (!this.paused) {
       for (const entity of this.engine.scenes.current.entities) {
+        entity.onPreUpdate(args)
+        entity.emit('preupdate', args)
+      }
+
+      for (const entity of this.engine.scenes.current.entities) {
         entity.onUpdate(args)
         entity.emit('update', args)
       }

@@ -1,5 +1,5 @@
 import { Container, Sprite, Texture } from 'pixi.js'
-import { Component, Entity, $Transform, UpdateEvent, Vector } from '../core'
+import { Component, Entity, $Transform, Vector } from '../core'
 import { RenderEvent } from './system'
 
 export class $PixiContainer<T extends Container> extends Component {
@@ -10,7 +10,7 @@ export class $PixiContainer<T extends Container> extends Component {
     this.container = container
   }
 
-  render({ interpolationFactor }: RenderEvent): void {
+  onRender({ interpolationFactor }: RenderEvent): void {
     const transform = this.entity.$($Transform)!
 
     const lerped = Vector.lerp(

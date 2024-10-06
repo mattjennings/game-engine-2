@@ -8,6 +8,7 @@ import { EventEmitter } from '../events'
 export class Entity extends EventEmitter<{
   added: Scene
   removed: Scene
+  preupdate: UpdateEvent
   update: UpdateEvent
   postupdate: UpdateEvent
 }> {
@@ -24,6 +25,8 @@ export class Entity extends EventEmitter<{
 
     return this.components.add(component)
   }
+
+  onPreUpdate(args: UpdateEvent) {}
 
   onUpdate(args: UpdateEvent) {}
 
@@ -71,8 +74,10 @@ export class ComponentRegistry {
     component.onAdd(this.entity)
 
     // maybe a bad idea, but we need to preserve the identify to remove it later
+    component.onPreUpdate = component.onPreUpdate.bind(component)
     component.onUpdate = component.onUpdate.bind(component)
     component.onPostUpdate = component.onPostUpdate.bind(component)
+    this.entity.on('preupdate', component.onPreUpdate)
     this.entity.on('update', component.onUpdate)
     this.entity.on('postupdate', component.onPostUpdate)
     return component
@@ -91,6 +96,7 @@ export class ComponentRegistry {
   remove(component: Component): void {
     this.components.delete(component.constructor)
     component.onRemove(this.entity)
+    this.entity.off('preupdate', component.onPreUpdate)
     this.entity.off('update', component.onUpdate)
     this.entity.off('postupdate', component.onPostUpdate)
   }

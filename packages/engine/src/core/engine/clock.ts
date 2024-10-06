@@ -18,7 +18,6 @@ export class Clock extends EventEmitter<{
   accumulatedFrameTime = 0
 
   private currentTime = performance.now()
-
   private timer: number | null = null
 
   constructor(engine: Engine, args?: { fps?: number; maxFrameDelta?: number }) {
@@ -73,5 +72,9 @@ export class Clock extends EventEmitter<{
 
   get started() {
     return !!this.timer
+  }
+
+  get fixedTimeStep() {
+    return 1 / this.fps
   }
 }

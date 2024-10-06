@@ -1,4 +1,4 @@
-import { Component, Entity, UpdateEvent } from '../engine'
+import { Component, Entity } from '../engine'
 import { Vector } from '../math'
 
 export class $Transform extends Component {
@@ -11,6 +11,7 @@ export class $Transform extends Component {
     args: { position?: Vector; rotation?: number } = {},
   ) {
     super(entity)
+
     if (args.position) {
       this.position = args.position
     }
@@ -20,7 +21,7 @@ export class $Transform extends Component {
     }
   }
 
-  onPostUpdate(ev: UpdateEvent): void {
-    this.prevPosition = this.position
+  onPreUpdate() {
+    this.prevPosition = this.position.clone()
   }
 }

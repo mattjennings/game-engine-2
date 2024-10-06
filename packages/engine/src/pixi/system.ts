@@ -33,32 +33,30 @@ export class PixiSystem extends System {
   render() {
     const newTime = performance.now()
     const delta = (newTime - this.lastRenderTime) / 1000
-
-    const minFrameTime = this.args.maxFps ? 1 / this.args.maxFps : 0
-
-    if (delta >= minFrameTime) {
-      this.lastRenderTime = newTime
-
-      for (const entity of this.query.get(this.engine.scenes.current)) {
-        const component = entity.components.get($PixiContainer)!
-        const interpolationFactor = Math.min(
-          this.engine.clock.accumulatedFrameTime / (1 / this.engine.clock.fps),
-        )
-
-        component.render({
-          delta,
-          elapsed: this.engine.clock.elapsed,
-          interpolationFactor,
-        })
-        component.emit('render', {
-          delta: delta,
-          elapsed: this.engine.clock.elapsed,
-          interpolationFactor,
-        })
-      }
-
-      this.application.render()
+    const interpolationFactor = Math.min(
+      1,
+      this.engine.clock.accumulatedFrameTime / this.engine.clock.fixedTimeStep,
+    )
+    const ev = {
+      delta,
+      elapsed: this.engine.clock.elapsed,
+      interpolationFactor,
     }
+
+    const maxFps = this.args.maxFps ? 1 / this.args.maxFps : 0
+    queueMicrotask(() => {
+      if (delta >= maxFps) {
+        for (const entity of this.query.get(this.engine.scenes.current)) {
+          const component = entity.components.get($PixiContainer)!
+
+          component.onRender(ev)
+          component.emit('render', ev)
+        }
+
+        this.lastRenderTime = newTime
+        this.application.render()
+      }
+    })
 
     // Request the next frame
     requestAnimationFrame(this.render.bind(this))
