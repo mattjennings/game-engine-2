@@ -6,5 +6,5 @@ export default defineConfig({
     dedupe: ['solid-js', 'pixi.js'],
     alias: {},
   },
-  plugins: [solid()],
+  // plugins: [solid()],
 })

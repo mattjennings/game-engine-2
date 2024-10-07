@@ -11,7 +11,7 @@ export class $PixiContainer<T extends Container> extends Component {
   }
 
   onRender({ interpolationFactor }: RenderEvent): void {
-    const transform = this.entity.$($Transform)!
+    const transform = this.entity.components.get($Transform)!
 
     const lerped = Vector.lerp(
       transform.prevPosition,

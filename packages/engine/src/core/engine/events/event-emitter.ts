@@ -1,3 +1,6 @@
+import { listen } from './decorators'
+
+@listen.setup
 export class EventEmitter<
   Events extends Record<string, any> = Record<string, any>,
 > {

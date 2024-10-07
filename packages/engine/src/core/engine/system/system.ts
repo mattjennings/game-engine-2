@@ -13,13 +13,7 @@ export class System extends EventEmitter<{
 
   query = new SystemQuery([])
 
-  async init() {
-    this.query.on('entityadded', this.onEntityAdded.bind(this))
-    this.query.on('entityremoved', this.onEntityRemoved.bind(this))
-  }
+  async init() {}
 
   update(event: TickEvent, entities: Set<Entity>) {}
-
-  onEntityAdded(entity: Entity) {}
-  onEntityRemoved(entity: Entity) {}
 }

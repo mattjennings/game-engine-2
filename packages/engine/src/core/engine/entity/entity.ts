@@ -16,16 +16,6 @@ export class Entity extends EventEmitter<{
   engine?: Engine
   components = new ComponentRegistry(this)
 
-  $<T extends Component>(ctor: ConstructorOf<T>): T | undefined
-  $<T extends Component>(component: T): T
-  $<T extends Component>(component: ConstructorOf<T> | T) {
-    if (typeof component === 'function') {
-      return this.components.get(component)
-    }
-
-    return this.components.add(component)
-  }
-
   onPreUpdate(args: UpdateEvent) {}
 
   onUpdate(args: UpdateEvent) {}

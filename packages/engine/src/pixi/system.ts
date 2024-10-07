@@ -1,6 +1,6 @@
 import { Application, ApplicationOptions } from 'pixi.js'
 
-import { System, SystemQuery } from '../core/engine'
+import { listen, System, SystemQuery } from '../core/engine'
 import { $PixiContainer } from './component'
 import { Entity, $Transform } from '../core'
 
@@ -8,6 +8,7 @@ export interface PixiSystemArgs extends Partial<ApplicationOptions> {
   maxFps?: number
 }
 
+@listen.setup
 export class PixiSystem extends System {
   args: PixiSystemArgs
   application!: Application
@@ -62,6 +63,7 @@ export class PixiSystem extends System {
     requestAnimationFrame(this.render.bind(this))
   }
 
+  @listen('query', 'entityadded')
   onEntityAdded(entity: Entity) {
     const component = entity.components.get($PixiContainer)
     if (component) {
@@ -69,6 +71,7 @@ export class PixiSystem extends System {
     }
   }
 
+  @listen('query', 'entityremoved')
   onEntityRemoved(entity: Entity) {
     const component = entity.components.get($PixiContainer)
     if (component) {
