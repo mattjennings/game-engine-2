@@ -2,13 +2,6 @@
   "name": "game-engine-2",
   "version": "1.0.0",
   "main": "index.js",
-  "workspaces": [
-    "packages/*",
-    "examples/*"
-  ],
-  "scripts": {
-    "dev": "vite"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",

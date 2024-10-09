@@ -1,0 +1,7 @@
+{
+  "workspace": [
+    "./examples/deno",
+    "./examples/browser",
+    "./packages/game-engine"
+  ]
+}
