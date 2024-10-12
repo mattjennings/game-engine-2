@@ -5,7 +5,7 @@ import { EventEmitter } from '../events'
 import { Scene } from '../scene'
 
 export class SystemQuery extends EventEmitter<{
-  entityadded: Entity
+  entityadd: Entity
   entityremoved: Entity
 }> {
   entities: Set<Entity> = new Set()
@@ -47,7 +47,7 @@ export class SystemQuery extends EventEmitter<{
         this.entities.add(entity)
 
         if (!previousEntities.has(entity)) {
-          this.emit('entityadded', entity)
+          this.emit('entityadd', entity)
         }
       }
     }

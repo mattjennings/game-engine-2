@@ -1,5 +1,5 @@
 import { Assets, Texture } from 'pixi.js'
-import { Resource } from '../core'
+import { Resource } from '../../core'
 
 export class PixiTextureResource extends Resource<Texture> {
   constructor(public path: string) {

@@ -5,7 +5,7 @@ import { EventEmitter } from '../events'
 import { SystemQuery } from './system-query'
 
 export class System extends EventEmitter<{
-  entityadded: Entity
+  entityadd: Entity
   entityremoved: Entity
 }> {
   static priority: number
@@ -14,12 +14,12 @@ export class System extends EventEmitter<{
   query = new SystemQuery([])
 
   async init() {
-    this.query.on('entityadded', this.onEntityAdded)
-    this.query.on('entityremoved', this.onEntityRemoved)
+    this.query.on('entityadd', this.onEntityAdd)
+    this.query.on('entityremoved', this.onEntityRemove)
   }
 
   update(event: TickEvent, entities: Set<Entity>) {}
 
-  onEntityAdded = (entity: Entity) => {}
-  onEntityRemoved = (entity: Entity) => {}
+  onEntityAdd = (entity: Entity) => {}
+  onEntityRemove = (entity: Entity) => {}
 }

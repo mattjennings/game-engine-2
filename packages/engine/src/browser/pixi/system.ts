@@ -1,7 +1,7 @@
 import { Application, ApplicationOptions } from 'pixi.js'
-import { System, SystemQuery } from '../core/engine'
+import { System, SystemQuery } from '../../core/engine'
 import { $PixiContainer } from './component'
-import { Entity, $Transform, Vector } from '../core'
+import { Entity, $Transform, Vector } from '../../core'
 
 export interface PixiSystemArgs extends Partial<ApplicationOptions> {
   application?: Partial<ApplicationOptions>
@@ -76,14 +76,14 @@ export class PixiSystem extends System {
     requestAnimationFrame(() => this.render())
   }
 
-  onEntityAdded = (entity: Entity) => {
+  onEntityAdd = (entity: Entity) => {
     const component = entity.components.get($PixiContainer)
     if (component) {
       this.application.stage.addChild(component.container)
     }
   }
 
-  onEntityRemoved = (entity: Entity) => {
+  onEntityRemove = (entity: Entity) => {
     const component = entity.components.get($PixiContainer)
     if (component) {
       this.application.stage.removeChild(component.container)

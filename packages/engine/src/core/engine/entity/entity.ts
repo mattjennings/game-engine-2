@@ -6,8 +6,9 @@ import { TickEvent } from '../clock'
 import { EventEmitter } from '../events'
 
 export class Entity extends EventEmitter<{
-  added: Scene
-  removed: Scene
+  add: Scene
+  remove: Scene
+  destroy: void
   preupdate: UpdateEvent
   update: UpdateEvent
   postupdate: UpdateEvent
@@ -28,7 +29,7 @@ export class Entity extends EventEmitter<{
   remove() {
     if (this.scene) {
       this.scene.removeEntity(this)
-      this.emit('removed', this.scene)
+      this.emit('remove', this.scene)
     }
   }
 
@@ -42,6 +43,7 @@ export class Entity extends EventEmitter<{
 
     this.removeAllListeners()
     this.components.destroy()
+    this.emit('destroy', void 0)
   }
 
   onAdd = (scene: Scene) => {}
@@ -61,7 +63,6 @@ export class ComponentRegistry {
 
     this.components.set(root, component)
     component.entity = this.entity
-    component.onAdd(this.entity)
 
     // maybe a bad idea, but we need to preserve the identify to remove it later
     component.onPreUpdate = component.onPreUpdate.bind(component)

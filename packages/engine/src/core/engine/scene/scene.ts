@@ -3,8 +3,8 @@ import { Entity } from '../entity'
 import { EventEmitter } from '../events'
 
 export class Scene extends EventEmitter<{
-  entityadded: Entity
-  entityremoved: Entity
+  entityadd: Entity
+  entityremove: Entity
 }> {
   engine: Engine
   entities: Set<Entity> = new Set()
@@ -18,9 +18,9 @@ export class Scene extends EventEmitter<{
     entity.scene = this
     entity.engine = this.engine
     entity.onAdd(this)
-    entity.emit('added', this)
+    entity.emit('add', this)
 
-    this.emit('entityadded', entity)
+    this.emit('entityadd', entity)
     this.entities.add(entity)
     this.engine.systems.invalidateQueries()
   }
@@ -34,7 +34,7 @@ export class Scene extends EventEmitter<{
     }
     entity.onRemove(this)
 
-    this.emit('entityremoved', entity)
+    this.emit('entityremove', entity)
     this.entities.delete(entity)
     this.engine.systems.invalidateQueries()
   }

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "exports": {
     ".": "./src/core/index.ts",
-    "./pixi": "./src/pixi/index.ts"
+    "./browser": "./src/browser/index.ts"
   },
   "keywords": [],
   "author": "",

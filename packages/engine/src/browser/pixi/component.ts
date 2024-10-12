@@ -1,5 +1,5 @@
 import { Container, Sprite, Texture } from 'pixi.js'
-import { Component, Entity } from '../core'
+import { Component, Entity } from '../../core'
 import { RenderEvent } from './system'
 
 export class $PixiContainer<T extends Container> extends Component {

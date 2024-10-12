@@ -1,15 +1,31 @@
 import './index.css'
 import { Engine, Entity, Scene, $Transform, UpdateEvent } from 'game-engine'
-import { $PixiSprite, PixiSystem } from 'game-engine/pixi'
+import {
+  $PixiSprite,
+  PixiSystem,
+  InputSystem,
+  $Input,
+} from 'game-engine/browser'
 import { resources } from './resources'
-import { Clock } from '../../../packages/engine/src/core/engine/clock'
 
 class Player extends Entity {
+  input = new $Input(this)
   transform = new $Transform(this)
   graphic = new $PixiSprite(this, resources.get('sprite'))
 
   onUpdate = ({ delta }: UpdateEvent) => {
-    this.transform.position.x += 100 * delta
+    const direction = this.input.mostRecent({
+      states: ['pressed', 'held'],
+      keys: ['ArrowLeft', 'ArrowRight'],
+    })
+
+    if (direction?.key === 'ArrowLeft') {
+      this.transform.position.x -= 100 * delta
+    }
+
+    if (direction?.key === 'ArrowRight') {
+      this.transform.position.x += 100 * delta
+    }
   }
 }
 
@@ -22,6 +38,7 @@ class Level1 extends Scene {
 const engine = new Engine({
   resources,
   systems: [
+    new InputSystem(),
     new PixiSystem({
       application: {
         width: 800,

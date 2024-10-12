@@ -1,8 +1,10 @@
 import { Entity, UpdateEvent } from '../entity'
 import { EventEmitter } from '../events'
+import { System } from '../system'
 
-export class Component extends EventEmitter {
+export class Component<S extends System = any> extends EventEmitter {
   entity: Entity
+  system?: S
 
   constructor(entity: Entity) {
     super()
@@ -10,7 +12,6 @@ export class Component extends EventEmitter {
     entity.components.add(this)
   }
 
-  onAdd(entity: Entity) {}
   onRemove(entity: Entity) {}
 
   onPreUpdate(ev: UpdateEvent) {}
