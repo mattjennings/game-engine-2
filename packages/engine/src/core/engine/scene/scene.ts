@@ -6,17 +6,12 @@ export class Scene extends EventEmitter<{
   entityadded: Entity
   entityremoved: Entity
 }> {
-  private _engine!: Engine
+  engine: Engine
   entities: Set<Entity> = new Set()
 
-  get engine() {
-    if (!this._engine) {
-      throw new Error(
-        "'engine' not found on Scene. Was it added to the Engine?",
-      )
-    }
-
-    return this._engine
+  constructor(engine: Engine) {
+    super()
+    this.engine = engine
   }
 
   addEntity(entity: Entity) {

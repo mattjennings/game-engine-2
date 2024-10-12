@@ -16,11 +16,11 @@ export class Entity extends EventEmitter<{
   engine?: Engine
   components = new ComponentRegistry(this)
 
-  onPreUpdate(args: UpdateEvent) {}
+  onPreUpdate = (args: UpdateEvent) => {}
 
-  onUpdate(args: UpdateEvent) {}
+  onUpdate = (args: UpdateEvent) => {}
 
-  onPostUpdate(args: UpdateEvent) {}
+  onPostUpdate = (args: UpdateEvent) => {}
 
   /**
    * Removes the entity from the scene but does not destroy it.
@@ -44,8 +44,8 @@ export class Entity extends EventEmitter<{
     this.components.destroy()
   }
 
-  onAdd(scene: Scene) {}
-  onRemove(scene: Scene) {}
+  onAdd = (scene: Scene) => {}
+  onRemove = (scene: Scene) => {}
 }
 
 export class ComponentRegistry {

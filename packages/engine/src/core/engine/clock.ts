@@ -6,6 +6,7 @@ export interface TickEvent {
   elapsed: number
 }
 
+export type TickerFn = (fn: () => void) => void
 export class Clock extends EventEmitter<{
   tick: TickEvent
 }> {
@@ -20,7 +21,19 @@ export class Clock extends EventEmitter<{
   private currentTime = performance.now()
   private timer: number | null = null
 
-  constructor(engine: Engine, args?: { fps?: number; maxFrameDelta?: number }) {
+  private tickerFn: TickerFn =
+    'document' in globalThis
+      ? (fn) => setTimeout(fn, 0)
+      : (fn) => requestAnimationFrame(fn)
+
+  constructor(
+    engine: Engine,
+    args?: {
+      fps?: number
+      maxFrameDelta?: number
+      tickerFn?: (fn: () => void) => void
+    },
+  ) {
     super()
     this.engine = engine
 
@@ -31,6 +44,10 @@ export class Clock extends EventEmitter<{
     if (args?.maxFrameDelta) {
       this.maxFrameDelta = args.maxFrameDelta
     }
+
+    if (args?.tickerFn) {
+      this.tickerFn = args.tickerFn
+    }
   }
 
   // https://gafferongames.com/post/fix_your_timestep/
@@ -38,9 +55,7 @@ export class Clock extends EventEmitter<{
     const newTime = performance.now()
     let frameTime = (newTime - this.currentTime) / 1000
 
-    if (frameTime > 0.25) {
-      frameTime = 0.25
-    }
+    frameTime = Math.min(frameTime, 0.25)
 
     this.currentTime = newTime
     this.elapsed += frameTime
@@ -53,7 +68,7 @@ export class Clock extends EventEmitter<{
       this.accumulatedFrameTime -= fixedDeltaTime
     }
 
-    this.timer = setTimeout(() => this.tick(), 0)
+    this.tickerFn(this.tick.bind(this))
   }
 
   start() {

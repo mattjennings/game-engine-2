@@ -7,11 +7,8 @@ import { Clock, TickEvent } from './clock'
 
 export interface EngineArgs {
   systems: System[]
-
-  clock?: Clock
-
   initialScene?: string
-  scenes: Record<string, Scene>
+  scenes: Record<string, ConstructorOf<Scene>>
 
   resources?: Resources<any>
 }
@@ -28,11 +25,6 @@ export class Engine {
 
   constructor(args: EngineArgs) {
     this.resources = args.resources || new Resources()
-
-    // clock
-    if (args.clock) {
-      this.clock = args.clock
-    }
 
     this.clock.on('tick', this.systems.update.bind(this.systems))
 
@@ -153,11 +145,8 @@ class Scenes extends EventEmitter {
     this.engine = engine
   }
 
-  add(name: string, scene: Scene) {
-    this.routes.set(name, scene)
-
-    // @ts-expect-error
-    scene._engine = this.engine
+  add(name: string, Scene: ConstructorOf<Scene>) {
+    this.routes.set(name, new Scene(this.engine))
   }
 
   goto(name: string) {
