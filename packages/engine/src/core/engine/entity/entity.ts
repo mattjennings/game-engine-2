@@ -1,11 +1,11 @@
-import { Component } from '../component'
+import { Engine } from '../../engine'
 import { ConstructorOf } from '../../../helpers'
-import { Scene } from '../scene'
-import { Engine } from '../engine'
 import { TickEvent } from '../clock'
+import { Component } from '../component'
 import { EventEmitter } from '../events'
+import { Scene } from '../scene'
 
-export class Entity extends EventEmitter<{
+export abstract class Entity extends EventEmitter<{
   add: Scene
   remove: Scene
   destroy: void

@@ -4,121 +4,131 @@ import { Resources } from './resources'
 import { Scene } from './scene'
 import { System } from './system'
 import { Clock, TickEvent } from './clock'
+import { Input } from './input'
+import { Entity } from 'game-engine'
 
-export interface EngineArgs {
+export interface EngineArgs<
+  TSceneKey extends string,
+  TInput extends Input<any, any>,
+  TResources extends Resources<any>,
+> {
+  clock?: Clock
   systems: System[]
-  initialScene?: string
-  scenes: Record<string, ConstructorOf<Scene>>
-
-  resources?: Resources<any>
+  resources?: TResources
+  input: TInput
+  types?: {
+    scenes?: TSceneKey
+  }
+}
+interface EngineDefinition<
+  TSceneKey extends string,
+  TInput extends Input<any, any>,
+  TResources extends Resources<any>,
+> {
+  scenes?: TSceneKey
+  resources?: TResources
+  input?: TInput
 }
 
-export class Engine {
-  systems = new Systems(this)
-  scenes = new Scenes(this)
-  clock = new Clock(this)
-  resources: Resources<any>
+export type EngineScene<T> =
+  T extends EngineDefinition<infer T, any, any> ? T : never
+export type EngineInput<T> =
+  T extends EngineDefinition<any, infer T, any> ? T : never
+export type EngineResources<T> =
+  T extends EngineDefinition<any, any, infer T> ? T : never
 
+export class Engine<
+  TSceneKey extends string = string,
+  TInput extends Input<any, any> = Input<any, any>,
+  TResources extends Resources<any> = Resources<any>,
+  TEngine extends EngineDefinition<
+    TSceneKey,
+    TInput,
+    TResources
+  > = EngineDefinition<TSceneKey, TInput, TResources>,
+> extends EventEmitter<{
+  scenechange: { name: EngineScene<TEngine>; scene: Scene }
+}> {
+  systems: System[] = []
+  input: EngineInput<TEngine>
+  resources: EngineResources<TEngine>
+  scenes: Record<EngineScene<TEngine>, Scene> = {} as any
+  currentScene!: Scene
+
+  clock = new Clock()
+
+  paused = false
   started = false
 
-  private initialSceneKey: string
+  constructor(args: EngineArgs<TSceneKey, TInput, TResources>) {
+    super()
 
-  constructor(args: EngineArgs) {
-    this.resources = args.resources || new Resources()
+    // resources
+    this.resources = (args.resources ||
+      new Resources()) as EngineResources<TEngine>
 
-    this.clock.on('tick', this.systems.update.bind(this.systems))
+    // input
+    this.input = args.input as EngineInput<TEngine>
+
+    // clock
+    if (args.clock) {
+      this.clock = args.clock
+    }
 
     // systems
     for (const system of args.systems) {
-      this.systems.add(system)
+      this.addSystem(system)
     }
+  }
 
-    // scenes
-    for (const [name, scene] of Object.entries(args.scenes || {})) {
-      this.scenes.add(name, scene)
-    }
-
-    this.initialSceneKey = args.initialScene ?? Object.keys(args.scenes)[0]
-
-    if (!this.scenes.routes.has(this.initialSceneKey)) {
-      throw new Error(
-        `Initial scene "${this.initialSceneKey}" not found in scenes: ${Object.keys(
-          args.scenes,
-        ).join(', ')}`,
-      )
-    }
-
-    this.scenes.on('change', () => {
-      this.systems.invalidateQueries()
+  async start({ scene }: { scene: EngineScene<TEngine> }) {
+    this.clock.on('tick', this.update.bind(this))
+    this.on('scenechange', () => {
+      for (const system of this.systems) {
+        system.query.invalidate()
+      }
     })
-  }
 
-  async init() {
     this.started = true
+
     await this.resources.load()
-    this.scenes.goto(this.initialSceneKey)
-    await this.systems.init()
+
+    this.gotoScene(scene)
+
+    for (const system of this.systems) {
+      await system.init()
+    }
+
     this.clock.start()
-  }
-
-  pause() {
-    this.systems.paused = true
-  }
-
-  resume() {
-    this.systems.paused = false
-  }
-}
-
-class Systems extends EventEmitter {
-  engine: Engine
-  paused = false
-
-  private systems: System[] = []
-
-  constructor(engine: Engine) {
-    super()
-    this.engine = engine
   }
 
   update(args: TickEvent) {
     if (!this.paused) {
-      for (const entity of this.engine.scenes.current.entities) {
+      this.input.update()
+      for (const entity of this.currentScene.entities) {
         entity.onPreUpdate(args)
         entity.emit('preupdate', args)
       }
 
-      for (const entity of this.engine.scenes.current.entities) {
+      for (const entity of this.currentScene.entities) {
         entity.onUpdate(args)
         entity.emit('update', args)
       }
 
       for (const system of this.systems) {
-        system.update(args, system.query.get(this.engine.scenes.current))
+        system.update(args, system.query.get(this.currentScene))
       }
 
-      for (const entity of this.engine.scenes.current.entities) {
+      for (const entity of this.currentScene.entities) {
         entity.onPostUpdate(args)
         entity.emit('postupdate', args)
       }
     }
   }
 
-  async init() {
-    for (const system of this.systems) {
-      await system.init()
-    }
-  }
-
-  invalidateQueries() {
-    for (const system of this.systems) {
-      system.query.invalidate()
-    }
-  }
-
-  add(system: System) {
+  addSystem(system: System) {
     this.systems.push(system)
-    system.engine = this.engine
+    system.engine = this
 
     this.systems.sort(
       // @ts-ignore
@@ -126,36 +136,90 @@ class Systems extends EventEmitter {
     )
   }
 
-  remove(system: System) {
+  removeSystem(system: System) {
     this.systems.splice(this.systems.indexOf(system), 1)
   }
 
-  get(system: ConstructorOf<System>) {
+  getSystem(system: ConstructorOf<System>) {
     return this.systems.find((s) => s.constructor === system)
   }
-}
 
-class Scenes extends EventEmitter {
-  routes: Map<string, Scene> = new Map()
-  current!: Scene
-  engine: Engine
-
-  constructor(engine: Engine) {
-    super()
-    this.engine = engine
+  pause() {
+    this.paused = true
   }
 
-  add(name: string, Scene: ConstructorOf<Scene>) {
-    this.routes.set(name, new Scene(this.engine))
+  resume() {
+    this.paused = false
   }
 
-  goto(name: string) {
-    if (!this.routes.has(name)) {
-      throw new Error(`Scene "${name}" not found`)
+  addScene(name: EngineScene<TEngine>): (Scene: ConstructorOf<Scene>) => void
+  addScene(name: EngineScene<TEngine>, Scene: ConstructorOf<Scene>): void
+  addScene(
+    name: EngineScene<TEngine>,
+    Scene?: ConstructorOf<Scene>,
+  ): ((Scene: ConstructorOf<Scene>) => void) | void {
+    if (Scene) {
+      this.scenes[name] = new Scene()
+    } else {
+      return (Scene: ConstructorOf<Scene>) => {
+        this.scenes[name] = new Scene()
+      }
+    }
+  }
+
+  gotoScene(name: EngineScene<TEngine>) {
+    if (!this.scenes[name]) {
+      throw new Error(`Scene "${name.toString()}" not found`)
     }
 
-    this.current = this.routes.get(name)!
-    this.emit('change', this.current)
-    this.current.onStart()
+    if (this.currentScene) {
+      this.currentScene.off('entityadd', this.onEntityAdd)
+      this.currentScene.off('entityremove', this.onEntityRemove)
+    }
+    this.currentScene = this.scenes[name]!
+    this.currentScene.on('entityadd', this.onEntityAdd)
+    this.currentScene.on('entityremove', this.onEntityRemove)
+
+    this.emit('scenechange', {
+      name: name,
+      scene: this.currentScene,
+    })
+    this.currentScene.onStart()
+  }
+
+  protected onEntityAdd = () => {
+    for (const system of this.systems) {
+      system.query.invalidate()
+    }
+  }
+
+  protected onEntityRemove = () => {
+    for (const system of this.systems) {
+      system.query.invalidate()
+    }
+  }
+
+  get Scene() {
+    const engine = this
+    const ctor = class extends Scene {
+      constructor() {
+        super()
+        this.engine = engine
+      }
+    }
+
+    return ctor
+  }
+
+  get Entity() {
+    const engine = this
+    const ctor = class extends Entity {
+      constructor() {
+        super()
+        this.engine = engine
+      }
+    }
+
+    return ctor
   }
 }

@@ -1,110 +1,32 @@
-import { Component, Entity } from '../../core'
+import { Input } from '../core/engine/input'
 
-interface KeyState {
-  key: Key
-  state: 'pressed' | 'held' | 'released'
-  timestamp: number
-}
+export class BrowserInput<
+  TMap extends Record<string, keyof typeof BrowserKeys> = {},
+> extends Input<typeof BrowserKeys, TMap> {
+  constructor({ inputMap }: { inputMap?: TMap } = {}) {
+    super({ inputMap: inputMap ?? ({} as TMap) })
 
-export class $Input extends Component {
-  private static instances = new Set<$Input>()
-  static keys = new Map<string, KeyState>()
-
-  constructor(entity: Entity) {
-    super(entity)
-    $Input.instances.add(this)
-  }
-
-  static init() {
     window.addEventListener('keydown', (ev) => {
-      if ($Input.keys.has(ev.key)) {
+      if (this.getInputState(ev.key)) {
         return
       }
 
-      $Input.keys.set(ev.key, {
-        key: ev.key as Key,
+      this.setInputState({
+        name: ev.key as keyof typeof BrowserKeys,
         state: 'pressed',
-        timestamp: performance.now(),
       })
     })
+
     window.addEventListener('keyup', (ev) => {
-      $Input.keys.set(ev.key, {
-        key: ev.key as Key,
+      this.setInputState({
+        name: ev.key as keyof typeof BrowserKeys,
         state: 'released',
-        timestamp: performance.now(),
       })
     })
-  }
-
-  onRemove(): void {
-    $Input.instances.delete(this)
-  }
-
-  static update() {
-    for (const [key, { state, timestamp }] of $Input.keys) {
-      if (state === 'pressed') {
-        $Input.keys.set(key, { key: key as Key, state: 'held', timestamp })
-      } else if (state === 'released') {
-        $Input.keys.delete(key)
-      }
-    }
-  }
-
-  /**
-   * Returns true if the key was pressed in the most recent frame
-   */
-  wasPressed(key: Key) {
-    return $Input.keys.get(key)?.state === 'pressed'
-  }
-
-  /**
-   * Returns true if the key is currently held down
-   */
-  isHeld(key: Key) {
-    return (
-      $Input.keys.get(key)?.state === 'held' ||
-      $Input.keys.get(key)?.state === 'pressed'
-    )
-  }
-
-  /**
-   * Returns true if the key was released in the most recent frame
-   */
-  wasReleased(key: Key) {
-    return $Input.keys.get(key)?.state === 'released'
-  }
-
-  /**
-   * Returns the most recent key that matches the given state
-   */
-  mostRecent({
-    states,
-    keys,
-  }: {
-    states: Array<KeyState['state']>
-    keys: Key[]
-  }): KeyState | undefined {
-    let mostRecent: KeyState | undefined
-
-    for (const key of keys) {
-      const keyState = $Input.keys.get(key)
-
-      if (
-        keyState &&
-        states.includes(keyState.state) &&
-        keyState.timestamp > (mostRecent?.timestamp ?? 0)
-      ) {
-        mostRecent = keyState
-      }
-    }
-
-    return mostRecent
   }
 }
 
-export type Key = keyof typeof Keys
-
-export const Keys = {
+export const BrowserKeys = {
   // Modifier keys
   Shift: 'Shift',
   Control: 'Control',

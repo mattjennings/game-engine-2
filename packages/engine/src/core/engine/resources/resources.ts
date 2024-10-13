@@ -1,32 +1,32 @@
-export class Resources<T extends string> {
-  loaded: Map<T, Resource> = new Map()
-  queued: Map<T, Resource> = new Map()
+export class Resources<T extends Record<string, Resource>> {
+  loaded: Partial<T> = {}
+  queued: Partial<T> = {}
 
   private loadingPromise: Promise<void> | undefined
 
-  constructor(map?: Record<T, Resource>) {
+  constructor(map?: T) {
     if (map) {
       for (const [name, resource] of Object.entries(map)) {
-        this.add(name as T, resource as Resource)
+        this.add(name, resource as Resource)
       }
     }
   }
 
-  add(name: T, resource: Resource) {
-    this.queued.set(name, resource)
+  add(name: keyof T, resource: Resource) {
+    this.queued[name] = resource as T[keyof T]
   }
 
-  get(name: T) {
-    const resource = this.loaded.get(name)
+  get<K extends keyof T>(name: K) {
+    const resource = this.loaded[name]
     if (!resource) {
-      throw new Error(`Resource "${name}" was not loaded`)
+      throw new Error(`Resource "${name as string}" was not loaded`)
     }
     return resource.get()
   }
 
-  unload(name: T) {
-    this.loaded.delete(name)
-    this.queued.delete(name)
+  unload(name: keyof T) {
+    delete this.loaded[name]
+    delete this.queued[name]
   }
 
   async load() {
@@ -36,12 +36,12 @@ export class Resources<T extends string> {
 
     // todo: load in parallel
     this.loadingPromise = new Promise(async (res, rej) => {
-      for (const [name, resource] of this.queued) {
+      for (const [name, resource] of Object.entries(this.queued)) {
         try {
           await resource.load()
-          if (this.queued.has(name)) {
-            this.loaded.set(name, resource)
-            this.queued.delete(name)
+          if (this.queued[name]) {
+            this.loaded[name as keyof T] = resource
+            delete this.queued[name]
           }
         } catch (e) {
           rej(e)
@@ -54,7 +54,10 @@ export class Resources<T extends string> {
   }
 
   get progress() {
-    return this.loaded.size / (this.loaded.size + this.queued.size)
+    return (
+      Object.keys(this.loaded).length /
+      (Object.keys(this.loaded).length + Object.keys(this.queued).length)
+    )
   }
 }
 

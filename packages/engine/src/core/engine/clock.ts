@@ -1,5 +1,4 @@
 import { EventEmitter } from './events'
-import { Engine } from './engine'
 
 export interface TickEvent {
   delta: number
@@ -10,8 +9,6 @@ export type TickerFn = (fn: () => void) => void
 export class Clock extends EventEmitter<{
   tick: TickEvent
 }> {
-  engine: Engine
-
   elapsed = 0
   fps = 60
   maxFrameDelta = 0.25
@@ -26,16 +23,12 @@ export class Clock extends EventEmitter<{
       ? (fn) => setTimeout(fn, 0)
       : (fn) => requestAnimationFrame(fn)
 
-  constructor(
-    engine: Engine,
-    args?: {
-      fps?: number
-      maxFrameDelta?: number
-      tickerFn?: (fn: () => void) => void
-    },
-  ) {
+  constructor(args?: {
+    fps?: number
+    maxFrameDelta?: number
+    tickerFn?: (fn: () => void) => void
+  }) {
     super()
-    this.engine = engine
 
     if (args?.fps) {
       this.fps = args.fps
