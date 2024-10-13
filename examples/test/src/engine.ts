@@ -50,5 +50,13 @@ export const engine = new Engine({
       },
     }),
   ],
-  input: new BrowserInput(),
+  input: new BrowserInput({
+    alias: {
+      left: ['ArrowLeft', 'a'],
+      right: 'ArrowRight',
+      up: 'ArrowUp',
+      down: 'ArrowDown',
+      jump: 'Space',
+    },
+  }),
 })

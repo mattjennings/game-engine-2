@@ -1,15 +1,32 @@
 import { EventEmitter } from './events'
 
+export interface AliasMap<Keys extends Record<string, string>> {
+  [key: string]: keyof Keys | Array<keyof Keys>
+}
+
 export class Input<
   Keys extends Record<string, string> = Record<string, string>,
-  InputMap extends Record<string, keyof Keys> = {},
+  Alias extends AliasMap<Keys> = {},
 > extends EventEmitter {
-  inputMap = new Map<keyof InputMap, InputState<keyof InputMap>>()
+  alias = new Map<keyof Alias, Array<keyof Keys>>()
+  inputs = new Map<string, keyof Keys>()
   current = new Map<keyof Keys, InputState<keyof Keys>>()
 
-  constructor({ inputMap }: { inputMap: InputMap }) {
+  constructor({ inputs, alias }: { inputs: Keys; alias?: Alias }) {
     super()
-    this.inputMap = new Map(Object.entries(inputMap)) as any
+
+    for (const [key, value] of Object.entries(inputs)) {
+      this.inputs.set(value, key as keyof Keys)
+    }
+
+    if (alias) {
+      for (const [key, value] of Object.entries(alias)) {
+        this.alias.set(
+          key as keyof Alias,
+          Array.isArray(value) ? value : [value],
+        )
+      }
+    }
   }
 
   setInputState({
@@ -31,10 +48,19 @@ export class Input<
     })
   }
 
-  getInputState(name: keyof Keys | keyof InputMap) {
-    return this.current.get(
-      (this.inputMap.get(name as keyof InputMap) || name) as keyof Keys,
-    )
+  getInputState(name: keyof Keys | keyof Alias) {
+    const aliased = this.alias.get(name as keyof Alias)
+
+    if (aliased) {
+      for (const alias of aliased) {
+        const state = this.current.get(alias)
+        if (state) {
+          return state
+        }
+      }
+    }
+
+    return this.current.get(name as keyof Keys)
   }
 
   update() {
@@ -50,7 +76,7 @@ export class Input<
   /**
    * Returns true if the key was pressed in the most recent frame
    */
-  wasPressed(...inputs: Array<keyof InputMap | keyof Keys>) {
+  wasPressed(...inputs: Array<keyof Alias | keyof Keys>) {
     return inputs.some(
       (input) => this.getInputState(input)?.state === 'pressed',
     )
@@ -59,7 +85,7 @@ export class Input<
   /**
    * Returns true if the key is currently pressed or held down
    */
-  isHeld(...inputs: Array<keyof InputMap | keyof Keys>) {
+  isHeld(...inputs: Array<keyof Alias | keyof Keys>) {
     return inputs.some((input) => {
       const state = this.getInputState(input)?.state
 
@@ -70,7 +96,7 @@ export class Input<
   /**
    * Returns true if the key was released in the most recent frame
    */
-  wasReleased(...inputs: Array<keyof InputMap | keyof Keys>) {
+  wasReleased(...inputs: Array<keyof Alias | keyof Keys>) {
     return inputs.some(
       (input) => this.getInputState(input)?.state === 'released',
     )
@@ -84,9 +110,9 @@ export class Input<
     inputs,
   }: {
     states: Array<InputState<any>['state']>
-    inputs: Array<keyof InputMap | keyof Keys>
+    inputs: Array<keyof Alias | keyof Keys>
   }) {
-    let mostRecent: InputState<keyof Keys | keyof InputMap> | undefined
+    let mostRecent: InputState<keyof Keys | keyof Alias> | undefined
 
     for (const input of inputs) {
       const inputState = this.getInputState(input)

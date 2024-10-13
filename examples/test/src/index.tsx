@@ -9,12 +9,12 @@ class Player extends engine.Entity {
   onUpdate = ({ delta }: UpdateEvent) => {
     const direction = engine.input.getLast({
       states: ['pressed', 'held'],
-      inputs: ['ArrowLeft', 'ArrowRight'],
+      inputs: ['left', 'right'],
     })
 
-    if (direction?.name === 'ArrowLeft') {
+    if (direction?.name === 'left') {
       this.transform.position.x -= 100 * delta
-    } else if (direction?.name === 'ArrowRight') {
+    } else if (direction?.name === 'right') {
       this.transform.position.x += 100 * delta
     }
   }

@@ -1,25 +1,33 @@
-import { Input } from '../core/engine/input'
+import { AliasMap, Input } from '../core/engine/input'
 
 export class BrowserInput<
-  TMap extends Record<string, keyof typeof BrowserKeys> = {},
-> extends Input<typeof BrowserKeys, TMap> {
-  constructor({ inputMap }: { inputMap?: TMap } = {}) {
-    super({ inputMap: inputMap ?? ({} as TMap) })
+  Alias extends AliasMap<typeof BrowserKeys> = {},
+> extends Input<typeof BrowserKeys, Alias> {
+  constructor({ alias }: { alias?: Alias } = {}) {
+    super({
+      inputs: BrowserKeys,
+      alias,
+    })
 
     window.addEventListener('keydown', (ev) => {
-      if (this.getInputState(ev.key)) {
+      const name =
+        this.inputs.get(ev.key) ?? (ev.key as keyof typeof BrowserKeys)
+
+      if (this.getInputState(name)) {
         return
       }
 
       this.setInputState({
-        name: ev.key as keyof typeof BrowserKeys,
+        name,
         state: 'pressed',
       })
     })
 
     window.addEventListener('keyup', (ev) => {
+      const name =
+        this.inputs.get(ev.key) ?? (ev.key as keyof typeof BrowserKeys)
       this.setInputState({
-        name: ev.key as keyof typeof BrowserKeys,
+        name,
         state: 'released',
       })
     })
@@ -117,7 +125,7 @@ export const BrowserKeys = {
   Tab: 'Tab',
   Enter: 'Enter',
   Escape: 'Escape',
-  Space: 'Space',
+  Space: ' ',
   Delete: 'Delete',
   Insert: 'Insert',
   Home: 'Home',
